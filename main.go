@@ -8,20 +8,20 @@ import (
 )
 
 const (
+	proxyPort     = ":9001"
 	defaultPort   = ":8000"
 	defaultTarget = "127.0.0.1"
 )
 
 type Scanner interface {
-	getParams() []string
-	getValues() []string
-	getMalChars() []string
+	getValues(*http.Request) []string
+	getMalChars(*http.Request) []string
 }
 
 type Blacklist struct {
-	headers   []string `KEY`
-	ips       []string `IP`
-	locations []string `PATHNAMES`
+	headers   []string
+	ips       []string
+	locations []string
 }
 
 var Bl Blacklist
@@ -45,11 +45,12 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		CleanPath(r)
 		if !IsForbiddenPath(r) {
+			ScanForSqli(r)
 			reverseProxy.ServeHTTP(w, r)
 		} else {
 			w.WriteHeader(403)
 		}
 	})
 
-	log.Fatal(http.ListenAndServe(":9001", nil))
+	log.Fatal(http.ListenAndServe(proxyPort, nil))
 }
