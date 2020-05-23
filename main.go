@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+
+	"github.com/gfw/scanner"
 )
 
 const (
@@ -12,11 +14,6 @@ const (
 	defaultPort   = ":8000"
 	defaultTarget = "127.0.0.1"
 )
-
-type Scanner interface {
-	getValues(*http.Request) []string
-	getMalChars(*http.Request) []string
-}
 
 type Blacklist struct {
 	headers   []string
@@ -45,8 +42,12 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		CleanPath(r)
 		if !IsForbiddenPath(r) {
-			ScanForSqli(r)
-			reverseProxy.ServeHTTP(w, r)
+			scanner.ScanForSqli(r)
+			if scanner.ScanForXSS(r) {
+				reverseProxy.ServeHTTP(w, r)
+			} else {
+				w.WriteHeader(403)
+			}
 		} else {
 			w.WriteHeader(403)
 		}
