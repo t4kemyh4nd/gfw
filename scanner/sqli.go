@@ -3,6 +3,7 @@ package scanner
 import (
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
@@ -31,7 +32,11 @@ func (s SQLiscanner) getGETValues(req *http.Request) map[string][]string {
 }
 
 func (s SQLiscanner) removeGETMalChars(req *http.Request) bool {
-	var malChars = []string{"'", "--", "\"", ";", "||"}
+	var malChars = []string{"'", "--", "\"", "||"}
+	//sqli regex
+	var sqlRegex = regexp.MustCompile(`(\bunion(\(*|\s{1,})select\s{1,}.*\s{1,}from(\(*|\s{1,})|\binsert\s{1,}into\s{1,}\({0,1}.*\){0,1}\s{1,}values\s*\({0,1}|(#|--)$)`)
+	var flag bool = true
+
 	var queryMap = s.getGETValues(req)
 
 	for keys, values := range queryMap {
@@ -39,13 +44,14 @@ func (s SQLiscanner) removeGETMalChars(req *http.Request) bool {
 			for strings.Contains(param, "/*") || strings.Contains(param, "*/") || strings.Contains(param, "#") {
 				param = strings.ReplaceAll(param, "/*", "")
 				param = strings.ReplaceAll(param, "*/", " ")
-				param = strings.ReplaceAll(param, "#", " ")
 			}
 			for _, m := range malChars {
 				if strings.Contains(param, m) {
-					param = strings.ReplaceAll(param, m, "\\"+m)
+					param = strings.ReplaceAll(strings.ToLower(param), m, "\\"+m)
 				}
+
 			}
+			flag = !sqlRegex.MatchString(strings.ToLower(param))
 			values[index] = param
 		}
 		queryMap[keys] = values
@@ -55,7 +61,7 @@ func (s SQLiscanner) removeGETMalChars(req *http.Request) bool {
 	getQuery = queryMap
 
 	req.URL.RawQuery = getQuery.Encode()
-	return true
+	return flag
 }
 
 func ScanForSqli(req *http.Request) {

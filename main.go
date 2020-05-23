@@ -42,8 +42,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		CleanPath(r)
 		if !IsForbiddenPath(r) {
-			scanner.ScanForSqli(r)
-			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) {
+			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) && scanner.ScanForSqli(r) {
 				reverseProxy.ServeHTTP(w, r)
 			} else {
 				w.WriteHeader(403)

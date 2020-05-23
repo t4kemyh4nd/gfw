@@ -1,9 +1,9 @@
 package scanner
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 type RCEscanner struct {
@@ -31,9 +31,7 @@ func (s RCEscanner) removeGETMalChars(req *http.Request) bool {
 
 	for _, values := range queryMap {
 		for _, param := range values {
-			flag = !rceRegex.MatchString(param)
-			fmt.Println(param)
-			fmt.Println(flag)
+			flag = !rceRegex.MatchString(strings.ToLower(param))
 		}
 	}
 
