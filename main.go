@@ -43,7 +43,7 @@ func main() {
 		CleanPath(r)
 		if !IsForbiddenPath(r) {
 			scanner.ScanForSqli(r)
-			if scanner.ScanForXSS(r) {
+			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) {
 				reverseProxy.ServeHTTP(w, r)
 			} else {
 				w.WriteHeader(403)

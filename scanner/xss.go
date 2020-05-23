@@ -1,13 +1,11 @@
 package scanner
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
 )
 
-//PLEASE USE PARAMETERIZED SQL QUERIES IN YOUR CODE
 type XSSscanner struct {
 	req *http.Request
 }
@@ -43,7 +41,6 @@ func (s XSSscanner) removeGETMalChars(req *http.Request) bool {
 	getQuery = queryMap
 
 	req.URL.RawQuery = getQuery.Encode()
-	fmt.Println(flag)
 	return flag
 }
 

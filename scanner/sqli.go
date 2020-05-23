@@ -1,7 +1,6 @@
 package scanner
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,11 +12,11 @@ type Scanner interface {
 }
 
 //PLEASE USE PARAMETERIZED SQL QUERIES IN YOUR CODE
-type SQLiScanner struct {
+type SQLiscanner struct {
 	req *http.Request
 }
 
-func (s SQLiScanner) getGETValues(req *http.Request) map[string][]string {
+func (s SQLiscanner) getGETValues(req *http.Request) map[string][]string {
 	var queryMap = make(map[string][]string)
 
 	if req.Method == "GET" {
@@ -31,13 +30,12 @@ func (s SQLiScanner) getGETValues(req *http.Request) map[string][]string {
 	return queryMap
 }
 
-func (s SQLiScanner) removeGETMalChars(req *http.Request) bool {
-	var malChars = []string{"'", "--", "\"", ";"}
+func (s SQLiscanner) removeGETMalChars(req *http.Request) bool {
+	var malChars = []string{"'", "--", "\"", ";", "||"}
 	var queryMap = s.getGETValues(req)
 
 	for keys, values := range queryMap {
 		for index, param := range values {
-			fmt.Println("params:", param)
 			for strings.Contains(param, "/*") || strings.Contains(param, "*/") || strings.Contains(param, "#") {
 				param = strings.ReplaceAll(param, "/*", "")
 				param = strings.ReplaceAll(param, "*/", " ")
@@ -62,7 +60,7 @@ func (s SQLiScanner) removeGETMalChars(req *http.Request) bool {
 
 func ScanForSqli(req *http.Request) {
 	var sqlsicanner Scanner
-	sqlsicanner = SQLiScanner{req}
+	sqlsicanner = SQLiscanner{req}
 
 	sqlsicanner.removeGETMalChars(req)
 }
