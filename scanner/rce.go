@@ -10,23 +10,23 @@ type RCEscanner struct {
 	req *http.Request
 }
 
-func (s RCEscanner) getGETValues(req *http.Request) map[string][]string {
+func (s RCEscanner) getGETValues() map[string][]string {
 	var queryMap = make(map[string][]string)
 
-	if req.Method == "GET" {
-		queryMap = req.URL.Query()
+	if s.req.Method == "GET" {
+		queryMap = s.req.URL.Query()
 	}
 
-	if req.Method == "POST" {
-		queryMap = req.URL.Query()
+	if s.req.Method == "POST" {
+		queryMap = s.req.URL.Query()
 	}
 
 	return queryMap
 }
 
-func (s RCEscanner) removeGETMalChars(req *http.Request) bool {
+func (s RCEscanner) removeGETMalChars() bool {
 	var rceRegex = regexp.MustCompile(`(;|&&|\|\|)(\s{0,}|\{IFS\})(sleep|curl|wget|netcat|nc|nslookup|ping|cat|touch)(\s{0,}|\{IFS\}).*(;|&&|\|\|)`)
-	var queryMap = s.getGETValues(req)
+	var queryMap = s.getGETValues()
 	var flag bool = true
 
 	for _, values := range queryMap {
@@ -42,5 +42,5 @@ func ScanForRCE(req *http.Request) bool {
 	var rcescanner Scanner
 	rcescanner = RCEscanner{req}
 
-	return rcescanner.removeGETMalChars(req)
+	return rcescanner.removeGETMalChars()
 }

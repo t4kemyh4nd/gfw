@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -23,6 +25,33 @@ type Blacklist struct {
 
 var Bl Blacklist
 
+type transport struct {
+	http.RoundTripper
+}
+
+func (t *transport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	resp, err = t.RoundTripper.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body = ioutil.NopCloser(bytes.NewReader(b))
+
+	//SET CUSTOM RESPONSE HEADERS HERE
+	resp.Header.Set("Server", "gfw")
+
+	err = resp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func main() {
 	var origin, _ = url.Parse("http://127.0.0.1:8000")
 	Bl.headers = []string{"X-FORBIDDEN"}
@@ -38,11 +67,12 @@ func main() {
 	}
 
 	var reverseProxy = &httputil.ReverseProxy{Director: director}
+	reverseProxy.Transport = &transport{http.DefaultTransport}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		CleanPath(r)
 		if !IsForbiddenPath(r) {
-			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) && scanner.ScanForSqli(r) {
+			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) {
 				reverseProxy.ServeHTTP(w, r)
 			} else {
 				w.WriteHeader(403)
