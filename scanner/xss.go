@@ -50,7 +50,7 @@ func (s XSSscanner) removeGETMalChars() bool {
 
 func ScanForXSS(req *http.Request) bool {
 	var xsscanner Scanner
-	xsscanner = XSSscanner{req}
+	xsscanner = &XSSscanner{req}
 
 	return xsscanner.removeGETMalChars()
 }

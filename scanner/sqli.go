@@ -34,7 +34,7 @@ func (s SQLiscanner) getGETValues() map[string][]string {
 func (s SQLiscanner) removeGETMalChars() bool {
 	var malChars = []string{"'", "--", "\"", "||"}
 	//sqli regex
-	var sqlRegex = regexp.MustCompile(`(\bunion(\(*|\s{1,})select\s{1,}.*\s{1,}from(\(*|\s{1,})|\binsert\s{1,}into\s{1,}\({0,1}.*\){0,1}\s{1,}values\s*\({0,1}|(#|--)$)`)
+	var sqlRegex = regexp.MustCompile(`(\bunion(\(*|\s{1,})select\s{1,}(.*|from(\(*|\s{1,}).*)|\binsert\s{1,}into\s{1,}\({0,1}.*\){0,1}\s{1,}values\s*\({0,1}|)(#|--)$`)
 	var flag bool = true
 
 	var queryMap = s.getGETValues()
@@ -64,9 +64,9 @@ func (s SQLiscanner) removeGETMalChars() bool {
 	return flag
 }
 
-func ScanForSqli(req *http.Request) {
+func ScanForSqli(req *http.Request) bool {
 	var sqlsicanner Scanner
-	sqlsicanner = SQLiscanner{req}
+	sqlsicanner = &SQLiscanner{req}
 
-	sqlsicanner.removeGETMalChars()
+	return sqlsicanner.removeGETMalChars()
 }

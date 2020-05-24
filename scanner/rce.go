@@ -40,7 +40,7 @@ func (s RCEscanner) removeGETMalChars() bool {
 
 func ScanForRCE(req *http.Request) bool {
 	var rcescanner Scanner
-	rcescanner = RCEscanner{req}
+	rcescanner = &RCEscanner{req}
 
 	return rcescanner.removeGETMalChars()
 }

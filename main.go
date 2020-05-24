@@ -67,12 +67,12 @@ func main() {
 	}
 
 	var reverseProxy = &httputil.ReverseProxy{Director: director}
-	reverseProxy.Transport = &transport{http.DefaultTransport}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		CleanPath(r)
 		if !IsForbiddenPath(r) {
-			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) {
+			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) && scanner.ScanForSqli(r) {
+				reverseProxy.Transport = &transport{http.DefaultTransport}
 				reverseProxy.ServeHTTP(w, r)
 			} else {
 				w.WriteHeader(403)
