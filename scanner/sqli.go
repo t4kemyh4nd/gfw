@@ -25,7 +25,11 @@ func (s SQLiscanner) getGETValues() map[string][]string {
 	}
 
 	if s.req.Method == "POST" {
-		queryMap = s.req.URL.Query()
+		var err = s.req.ParseForm()
+		if err != nil {
+			panic("Couldn't parse form")
+		}
+		queryMap = s.req.PostForm
 	}
 
 	return queryMap
