@@ -8,13 +8,14 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/gfw/scanner"
+	"github.com/t4kemyh4nd/gfw/scanner"
 )
 
 const (
 	proxyPort     = ":9001"
 	defaultPort   = ":8000"
 	defaultTarget = "127.0.0.1"
+	scheme        = "http"
 )
 
 type Blacklist struct {
@@ -35,17 +36,16 @@ func (t *transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		return nil, err
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
+	if b, err := ioutil.ReadAll(resp.Body); err != nil {
 		return nil, err
+	} else {
+		resp.Body = ioutil.NopCloser(bytes.NewReader(b))
 	}
-	resp.Body = ioutil.NopCloser(bytes.NewReader(b))
 
 	//SET CUSTOM RESPONSE HEADERS HERE
 	resp.Header.Set("Server", "gfw")
 
-	err = resp.Body.Close()
-	if err != nil {
+	if err = resp.Body.Close(); err != nil {
 		return nil, err
 	}
 
@@ -53,16 +53,17 @@ func (t *transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 }
 
 func main() {
-	var origin, _ = url.Parse("http://127.0.0.1:8000")
+	var origin, _ = url.Parse(scheme + "://" + defaultTarget + defaultPort)
 	Bl.headers = []string{"X-FORBIDDEN"}
 	Bl.locations = []string{"/forbidden"}
+	Bl.ips = []string{"127.0.0.1"}
 
 	var director = func(req *http.Request) {
 		CleanHeaders(req)
 		req.Header.Add("X-Forwarded-Host", req.Host)
 		req.Header.Add("X-Origin-Host", origin.Host)
-		req.Header.Add("X-FIREWALL", "1")
-		req.URL.Scheme = "http"
+		req.Header.Add("X-Firewall", "1")
+		req.URL.Scheme = scheme
 		req.URL.Host = origin.Host
 	}
 
@@ -71,7 +72,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		CleanPath(r)
 		if !IsForbiddenPath(r) {
-			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) && scanner.ScanForSqli(r) {
+			if scanner.ScanForXSS(r) && scanner.ScanForRCE(r) && scanner.ScanForSqli(r) && !IsIPBlacklisted(r) {
 				reverseProxy.Transport = &transport{http.DefaultTransport}
 				reverseProxy.ServeHTTP(w, r)
 			} else {

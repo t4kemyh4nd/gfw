@@ -10,27 +10,21 @@ type RCEscanner struct {
 	req *http.Request
 }
 
-func (s RCEscanner) getGETValues() map[string][]string {
-	var queryMap = make(map[string][]string)
-
+func (s RCEscanner) getValues() map[string][]string {
 	if s.req.Method == "GET" {
-		queryMap = s.req.URL.Query()
-	}
-
-	if s.req.Method == "POST" {
-		var err = s.req.ParseForm()
-		if err != nil {
+		return s.req.URL.Query()
+	} else {
+		if err := s.req.ParseForm(); err != nil {
 			panic("Couldn't parse form")
+		} else {
+			return s.req.PostForm
 		}
-		queryMap = s.req.PostForm
 	}
-
-	return queryMap
 }
 
-func (s RCEscanner) removeGETMalChars() bool {
+func (s RCEscanner) removeMalChars() bool {
 	var rceRegex = regexp.MustCompile(`(;|&&|\|\|)(\s{0,}|\{IFS\})(sleep|curl|wget|netcat|nc|nslookup|ping|cat|touch)(\s{0,}|\{IFS\}).*(;|&&|\|\|)`)
-	var queryMap = s.getGETValues()
+	var queryMap = s.getValues()
 	var flag bool = true
 
 	for _, values := range queryMap {
@@ -43,8 +37,7 @@ func (s RCEscanner) removeGETMalChars() bool {
 }
 
 func ScanForRCE(req *http.Request) bool {
-	var rcescanner Scanner
-	rcescanner = &RCEscanner{req}
+	var rcescanner Scanner = &RCEscanner{req}
 
-	return rcescanner.removeGETMalChars()
+	return rcescanner.removeMalChars()
 }
